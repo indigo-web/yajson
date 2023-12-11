@@ -1,0 +1,4 @@
+github.com/indigo-web/utils v0.6.0 h1:rmVWFkCLMiw9sCBAvBdxTHtPCm54tOsCf+hmvuY9zxQ=
+github.com/indigo-web/utils v0.6.0/go.mod h1:Q+voOJjIRN7DV+ifWozy6RY6cDF10Ev0NPDjsuOAXfQ=
+github.com/romshark/jscan/v2 v2.0.1 h1:c6Kb78c/EpzAXtINdtONGUpR/SC78p8Oi3K9lBA2NOQ=
+github.com/romshark/jscan/v2 v2.0.1/go.mod h1:d/iHkyTfFxOYPj5dl7mY/EkjnIpGSig4ajUaJ8Vn1Yo=
