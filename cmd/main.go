@@ -27,7 +27,7 @@ func main() {
 	}
 	`
 
-	parser := yajson.NewJSON[myJSONModel]()
+	parser := yajson.New[myJSONModel]()
 	result, err := parser.Parse(j)
 	if err != nil {
 		fmt.Println("error:", err)
