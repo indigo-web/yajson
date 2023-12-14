@@ -7,7 +7,7 @@ import (
 
 func BenchmarkModelFiller(b *testing.B) {
 	b.Run("full", func(b *testing.B) {
-		model := NewModel[myStruct]()
+		model := NewModel[myStruct](nil)
 		fields := []Attr{
 			{"A", uptr(5)},
 			{"B", uptr(32769)},
@@ -23,7 +23,7 @@ func BenchmarkModelFiller(b *testing.B) {
 	})
 
 	b.Run("single field", func(b *testing.B) {
-		model := NewModel[myStruct]()
+		model := NewModel[myStruct](nil)
 
 		b.ReportAllocs()
 		b.SetBytes(int64(unsafe.Sizeof(myStruct{}.C)))

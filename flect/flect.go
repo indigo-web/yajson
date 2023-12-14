@@ -9,7 +9,13 @@ type Model[T any] struct {
 	attrs *attrsMap[T]
 }
 
-func NewModel[T any]() Model[T] {
+func NewModel[T any](fieldUnmarshaller func(reflect.StructField) string) Model[T] {
+	if fieldUnmarshaller == nil {
+		fieldUnmarshaller = func(field reflect.StructField) string {
+			return field.Name
+		}
+	}
+
 	var zero [0]T
 	typ := reflect.TypeOf(zero).Elem()
 	if typ.Kind() != reflect.Struct {
@@ -22,7 +28,7 @@ func NewModel[T any]() Model[T] {
 
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
-		model.attrs.Insert(field.Name, Field[T]{
+		model.attrs.Insert(fieldUnmarshaller(field), Field[T]{
 			meta: fieldMeta{
 				Size:   field.Type.Size(),
 				Offset: field.Offset,

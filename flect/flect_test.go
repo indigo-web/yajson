@@ -13,7 +13,7 @@ type myStruct struct {
 }
 
 func TestFlect(t *testing.T) {
-	model := NewModel[myStruct]()
+	model := NewModel[myStruct](nil)
 
 	t.Run("instantiate", func(t *testing.T) {
 		m := Instantiate(model,
