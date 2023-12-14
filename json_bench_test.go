@@ -7,12 +7,6 @@ import (
 	"testing"
 )
 
-type basicStringModel struct {
-	Something string `json:"Something"`
-	Nothing   string `json:"Nothing"`
-	Boah      string `json:"Boah"`
-}
-
 func BenchmarkJSON(b *testing.B) {
 	j := `
 	{
@@ -33,7 +27,6 @@ func BenchmarkJSON(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			m, _ = parser.Parse(j)
-			parser.Reset()
 		}
 	})
 
