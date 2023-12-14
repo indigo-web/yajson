@@ -24,7 +24,7 @@ type JSON[T any] struct {
 // New returns a JSON parser instance for one specific model, defined via the generic
 func New[T any]() *JSON[T] {
 	return &JSON[T]{
-		model:  flect.NewModel[T](),
+		model:  flect.NewModel[T](nil),
 		buffer: buffer.New(BufferSpaceMin, BufferSpaceMax),
 	}
 }
@@ -58,9 +58,9 @@ func (j *JSON[T]) Parse(input string) (result T, err error) {
 		err = jsonErr
 	}
 
-	return result, err
-}
-
-func (j *JSON[T]) Reset() {
+	// this won't destroy strings we've written, however on next call they may be overridden
+	// by new ones
 	j.buffer.Clear()
+
+	return result, err
 }
