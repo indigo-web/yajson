@@ -10,8 +10,8 @@ import (
 func BenchmarkJSON(b *testing.B) {
 	j := `
 	{
-		"Boah": "any text here",
-		"Something": "okay, let it be",
+		"foo": "any text here",
+		"some_thing": "some text inside of the string",
 		"Nothing": "Hello, world!",
 		"any string": "This must never appear"
 	}
