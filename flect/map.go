@@ -29,6 +29,16 @@ func (a *attrsMap[T]) Insert(key string, field Field[T]) {
 	})
 }
 
+func (a *attrsMap[T]) Entries() []attrsMapEntry[T] {
+	var attrs []attrsMapEntry[T]
+
+	for _, entries := range a.buckets {
+		attrs = append(attrs, entries...)
+	}
+
+	return attrs
+}
+
 func (a *attrsMap[T]) grow(n int) {
 	newBuckets := make([]attrsMapBucket[T], n+1)
 	copy(newBuckets, a.buckets)

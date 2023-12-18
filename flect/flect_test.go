@@ -1,18 +1,20 @@
 package flect
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"unsafe"
 )
 
-type myStruct struct {
-	A byte
-	B uint16
-	C int32
-}
-
 func TestFlect(t *testing.T) {
+	type myStruct struct {
+		A byte
+		B uint16
+		C int32
+	}
+
 	model := NewModel[myStruct](nil)
 
 	t.Run("instantiate", func(t *testing.T) {
@@ -49,6 +51,35 @@ func TestFlect(t *testing.T) {
 		assert.Equal(t, uint8(5), m.A)
 		assert.Equal(t, uint16(0), m.B)
 		assert.Equal(t, int32(-67108864), m.C)
+	})
+
+	type nestedStructs struct {
+		A string
+		B struct {
+			C string
+			D struct {
+				E string
+			}
+		}
+	}
+
+	t.Run("nested structs", func(t *testing.T) {
+		model := NewModel[nestedStructs](new(NameDeserializer))
+		fmt.Println(model)
+		m := Instantiate(model, Attr{
+			Key:   "A",
+			Value: uptr("foo"),
+		}, Attr{
+			Key:   "B.C",
+			Value: uptr("bar"),
+		}, Attr{
+			Key:   "B.D.E",
+			Value: uptr("spam"),
+		})
+
+		require.Equal(t, "foo", m.A)
+		require.Equal(t, "bar", m.B.C)
+		require.Equal(t, "spam", m.B.D.E)
 	})
 }
 

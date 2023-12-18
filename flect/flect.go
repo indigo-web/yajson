@@ -1,7 +1,10 @@
 package flect
 
 import (
+	"fmt"
 	"reflect"
+	"sort"
+	"strings"
 	"unsafe"
 )
 
@@ -9,34 +12,64 @@ type Model[T any] struct {
 	attrs *attrsMap[T]
 }
 
-func NewModel[T any](fieldUnmarshaller func(reflect.StructField) string) Model[T] {
-	if fieldUnmarshaller == nil {
-		fieldUnmarshaller = func(field reflect.StructField) string {
-			return field.Name
-		}
+func NewModel[T any](deserializer Deserializer) Model[T] {
+	if deserializer == nil {
+		deserializer = new(NameDeserializer)
 	}
 
 	var zero [0]T
 	typ := reflect.TypeOf(zero).Elem()
 	if typ.Kind() != reflect.Struct {
+		// TODO: accept maps as well, it's gonna be easy to implement as they don't need
+		//  any special treatment
 		panic("not a struct")
 	}
 
-	model := Model[T]{
-		attrs: new(attrsMap[T]),
-	}
+	attrs := new(attrsMap[T])
+	deserializeFields(0, attrs, deserializer, typ)
 
+	return Model[T]{
+		attrs: attrs,
+	}
+}
+
+func deserializeFields[T any](offset uintptr, attrs *attrsMap[T], deserializer Deserializer, typ reflect.Type) {
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
-		model.attrs.Insert(fieldUnmarshaller(field), Field[T]{
+		name := deserializer.Visit(field)
+		attrs.Insert(name, Field[T]{
 			meta: fieldMeta{
 				Size:   field.Type.Size(),
-				Offset: field.Offset,
+				Offset: offset + field.Offset,
 			},
 		})
+
+		if field.Type.Kind() == reflect.Struct {
+			deserializer.Descend(field)
+			deserializeFields[T](offset+field.Offset, attrs, deserializer, field.Type)
+			deserializer.Ascend()
+		}
+	}
+}
+
+func (m Model[T]) String() string {
+	entries := m.attrs.Entries()
+
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Field.meta.Offset < entries[j].Field.meta.Offset
+	})
+
+	var fields []string
+
+	for _, entry := range entries {
+		fields = append(fields, fmt.Sprintf(
+			"%s: size=%d offset=%d", entry.Key, entry.Field.meta.Size, entry.Field.meta.Offset,
+		))
 	}
 
-	return model
+	return fmt.Sprintf(
+		"Model[%s]{%s}", reflect.TypeOf([0]T{}).Elem().Name(), strings.Join(fields, ", "),
+	)
 }
 
 func (m Model[T]) Field(key string) (Field[T], bool) {
@@ -116,4 +149,30 @@ func memcpy(dst, src unsafe.Pointer, size uintptr) {
 
 type fieldMeta struct {
 	Size, Offset uintptr
+}
+
+type Deserializer interface {
+	Descend(field reflect.StructField)
+	Ascend()
+	Visit(field reflect.StructField) string
+}
+
+type NameDeserializer struct {
+	stack []string
+}
+
+func (n *NameDeserializer) Descend(field reflect.StructField) {
+	n.stack = append(n.stack, field.Name)
+}
+
+func (n *NameDeserializer) Ascend() {
+	n.stack = n.stack[:len(n.stack)-1]
+}
+
+func (n *NameDeserializer) Visit(field reflect.StructField) (name string) {
+	if len(n.stack) > 0 {
+		name = strings.Join(n.stack, ".") + "."
+	}
+
+	return name + field.Name
 }

@@ -6,6 +6,12 @@ import (
 )
 
 func BenchmarkModelFiller(b *testing.B) {
+	type myStruct struct {
+		A byte
+		B uint16
+		C int32
+	}
+
 	b.Run("full", func(b *testing.B) {
 		model := NewModel[myStruct](nil)
 		fields := []Attr{
