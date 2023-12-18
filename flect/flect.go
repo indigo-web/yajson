@@ -46,7 +46,7 @@ func deserializeFields[T any](offset uintptr, attrs *attrsMap[T], deserializer D
 
 		if field.Type.Kind() == reflect.Struct {
 			deserializer.Descend(field)
-			deserializeFields[T](offset+field.Offset, attrs, deserializer, field.Type)
+			deserializeFields(offset+field.Offset, attrs, deserializer, field.Type)
 			deserializer.Ascend()
 		}
 	}
@@ -76,31 +76,32 @@ func (m Model[T]) Field(key string) (Field[T], bool) {
 	return m.attrs.Lookup(key)
 }
 
-type Attr struct {
+type Param struct {
 	Key   string
 	Value unsafe.Pointer
 }
 
-func Instantiate[T any](model Model[T], attrs ...Attr) T {
+func Instantiate[T any](model Model[T], params ...Param) T {
 	var zero T
 
-	for _, attr := range attrs {
-		field, found := model.Field(attr.Key)
+	for _, param := range params {
+		field, found := model.Field(param.Key)
 		if !found {
 			continue
 		}
 
-		zero = field.WriteUFP(zero, attr.Value)
+		zero = field.WriteUPtr(zero, param.Value)
 	}
 
 	return zero
 }
 
 type Field[T any] struct {
+	Type BasicType
 	meta fieldMeta
 }
 
-func (f Field[T]) WriteUFP(into T, src unsafe.Pointer) T {
+func (f Field[T]) WriteUPtr(into T, src unsafe.Pointer) T {
 	dst := unsafe.Add(unsafe.Pointer(&into), f.meta.Offset)
 	memcpy(dst, src, f.meta.Size)
 
@@ -108,39 +109,39 @@ func (f Field[T]) WriteUFP(into T, src unsafe.Pointer) T {
 }
 
 func (f Field[T]) WriteUInt8(into T, num uint8) T {
-	return f.WriteUFP(into, unsafe.Pointer(&num))
+	return f.WriteUPtr(into, unsafe.Pointer(&num))
 }
 
 func (f Field[T]) WriteUInt16(into T, num uint16) T {
-	return f.WriteUFP(into, unsafe.Pointer(&num))
+	return f.WriteUPtr(into, unsafe.Pointer(&num))
 }
 
 func (f Field[T]) WriteUInt32(into T, num uint32) T {
-	return f.WriteUFP(into, unsafe.Pointer(&num))
+	return f.WriteUPtr(into, unsafe.Pointer(&num))
 }
 
 func (f Field[T]) WriteUInt64(into T, num uint64) T {
-	return f.WriteUFP(into, unsafe.Pointer(&num))
+	return f.WriteUPtr(into, unsafe.Pointer(&num))
 }
 
 func (f Field[T]) WriteInt8(into T, num int8) T {
-	return f.WriteUFP(into, unsafe.Pointer(&num))
+	return f.WriteUPtr(into, unsafe.Pointer(&num))
 }
 
 func (f Field[T]) WriteInt16(into T, num int16) T {
-	return f.WriteUFP(into, unsafe.Pointer(&num))
+	return f.WriteUPtr(into, unsafe.Pointer(&num))
 }
 
 func (f Field[T]) WriteInt32(into T, num int32) T {
-	return f.WriteUFP(into, unsafe.Pointer(&num))
+	return f.WriteUPtr(into, unsafe.Pointer(&num))
 }
 
 func (f Field[T]) WriteInt64(into T, num int64) T {
-	return f.WriteUFP(into, unsafe.Pointer(&num))
+	return f.WriteUPtr(into, unsafe.Pointer(&num))
 }
 
 func (f Field[T]) WriteString(into T, value string) T {
-	return f.WriteUFP(into, unsafe.Pointer(&value))
+	return f.WriteUPtr(into, unsafe.Pointer(&value))
 }
 
 func memcpy(dst, src unsafe.Pointer, size uintptr) {

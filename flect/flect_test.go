@@ -1,7 +1,6 @@
 package flect
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -65,7 +64,6 @@ func TestFlect(t *testing.T) {
 
 	t.Run("nested structs", func(t *testing.T) {
 		model := NewModel[nestedStructs](new(NameDeserializer))
-		fmt.Println(model)
 		m := Instantiate(model, Attr{
 			Key:   "A",
 			Value: uptr("foo"),
