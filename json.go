@@ -51,7 +51,7 @@ func (j *JSON[T]) Parse(input string) (result T, err error) {
 
 		value := uf.B2S(j.buffer.Finish())
 		value = value[1 : len(value)-1]
-		result = field.WriteUFP(result, unsafe.Pointer(&value))
+		result = field.WriteUPtr(result, unsafe.Pointer(&value))
 
 		return false
 	})
@@ -83,6 +83,10 @@ func (p *pathDeserializer) Visit(field reflect.StructField) (name string) {
 
 	if len(p.stack) > 0 {
 		name += strings.Join(p.stack, "/") + "/"
+	}
+
+	if tag, found := field.Tag.Lookup("json"); found {
+		return name + tag
 	}
 
 	return name + field.Name
