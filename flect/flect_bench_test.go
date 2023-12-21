@@ -14,7 +14,7 @@ func BenchmarkModelFiller(b *testing.B) {
 
 	b.Run("full", func(b *testing.B) {
 		model := NewModel[myStruct](nil)
-		fields := []Attr{
+		fields := []Param{
 			{"A", uptr(5)},
 			{"B", uptr(32769)},
 			{"C", uptr(67108864)},

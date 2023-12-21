@@ -1,9 +1,11 @@
 package flect
 
-type BasicType uint8
+//go:generate stringer -type=BaseType
+type BaseType uint8
 
 const (
-	String BasicType = iota + 1
+	Unknown BaseType = iota
+	String
 	Bool
 	Array
 	U8
