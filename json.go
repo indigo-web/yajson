@@ -7,6 +7,7 @@ import (
 	"github.com/indigo-web/yajson/flect"
 	"github.com/romshark/jscan/v2"
 	"reflect"
+	"strconv"
 	"strings"
 	"unsafe"
 )
@@ -16,7 +17,11 @@ const (
 	BufferSpaceMax = 127 * 1024
 )
 
-var ErrNoSpace = errors.New("no space for values")
+var (
+	ErrNoSpace      = errors.New("no space for values")
+	ErrTypeMismatch = errors.New("JSON carries an entry with an incompatible type")
+	ErrUnknownType  = errors.New("the type is not supported by yajson")
+)
 
 type JSON[T any] struct {
 	model  flect.Model[T]
@@ -35,7 +40,7 @@ func New[T any]() *JSON[T] {
 func (j *JSON[T]) Parse(input string) (result T, err error) {
 	jsonErr := jscan.Scan(input, func(i *jscan.Iterator[string]) (exit bool) {
 		key := i.Pointer()
-		if len(key) == 0 || i.ValueType() != jscan.ValueTypeString {
+		if len(key) == 0 {
 			return false
 		}
 
@@ -44,14 +49,59 @@ func (j *JSON[T]) Parse(input string) (result T, err error) {
 			return false
 		}
 
-		if !j.buffer.Append(uf.S2B(i.Value())) {
-			err = ErrNoSpace
+		switch field.Type {
+		case flect.String:
+			if i.ValueType() != jscan.ValueTypeString {
+				err = ErrTypeMismatch
+				return true
+			}
+
+			if !j.buffer.Append(uf.S2B(i.Value())) {
+				err = ErrNoSpace
+				return true
+			}
+
+			value := uf.B2S(j.buffer.Finish())
+			result = field.WriteString(result, value[1:len(value)-1])
+		case flect.Bool:
+			switch i.ValueType() {
+			case jscan.ValueTypeTrue, jscan.ValueTypeFalse:
+			default:
+				err = ErrTypeMismatch
+				return true
+			}
+
+			result = field.WriteBool(result, i.ValueType() == jscan.ValueTypeTrue)
+		case flect.Int, flect.I8, flect.I16, flect.I32, flect.I64:
+			if i.ValueType() != jscan.ValueTypeNumber {
+				err = ErrTypeMismatch
+				return true
+			}
+
+			num, er := strconv.ParseInt(i.Value(), 10, int(field.Size()))
+			if er != nil {
+				err = ErrTypeMismatch
+				return true
+			}
+
+			result = field.WriteUPtr(result, unsafe.Pointer(&num))
+		case flect.Uint, flect.U8, flect.U16, flect.U32, flect.U64:
+			if i.ValueType() != jscan.ValueTypeNumber {
+				err = ErrTypeMismatch
+				return true
+			}
+
+			num, er := strconv.ParseUint(i.Value(), 10, int(field.Size()))
+			if er != nil {
+				err = ErrTypeMismatch
+				return true
+			}
+
+			result = field.WriteUPtr(result, unsafe.Pointer(&num))
+		default:
+			err = ErrUnknownType
 			return true
 		}
-
-		value := uf.B2S(j.buffer.Finish())
-		value = value[1 : len(value)-1]
-		result = field.WriteUPtr(result, unsafe.Pointer(&value))
 
 		return false
 	})
